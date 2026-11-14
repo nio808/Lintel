@@ -31,6 +31,14 @@ $RunValue = 'Lintel'   # same value name as StartupRegistration in the app
 function Say([string]$Text) { Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline; Write-Host $Text }
 function Plan([string]$Text) { Write-Host "  WOULD: $Text" -ForegroundColor Yellow }
 
+# Create a registry key and any missing parents. Never New-Item -Force: on an existing key it
+# recreates it and wipes every value (e.g. other apps' startup entries under Run).
+function Confirm-RegistryKey([string]$Path) {
+    if (Test-Path $Path) { return }
+    Confirm-RegistryKey (Split-Path $Path -Parent)
+    New-Item -Path $Path | Out-Null
+}
+
 # Parses "<64 hex>  <file>" lines (sha256sum format, optional '*' binary marker). Returns lowercase hash or $null.
 function Get-ChecksumFromText([string]$Text, [string]$FileName) {
     foreach ($line in ($Text -split "`r?`n")) {
@@ -192,7 +200,7 @@ function Invoke-LintelInstall {
         $cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass"
         $file = "-File `"$(Join-Path $InstallDir 'uninstall.ps1')`""
         $size = [int]((Get-ChildItem -LiteralPath $InstallDir -Recurse -File | Measure-Object Length -Sum).Sum / 1KB)
-        if (-not (Test-Path $UninstallKey)) { New-Item -Path $UninstallKey | Out-Null }   # never -Force on a registry key
+        Confirm-RegistryKey $UninstallKey
         $props = @{
             DisplayName = 'Lintel'; DisplayVersion = $ver; Publisher = 'nio808'; DisplayIcon = $exe; InstallLocation = $InstallDir
             URLInfoAbout = "https://github.com/$Repo"; UninstallString = "$cmd $file"; QuietUninstallString = "$cmd -WindowStyle Hidden $file"
@@ -204,7 +212,7 @@ function Invoke-LintelInstall {
         Say 'Start menu shortcut and Apps entry added'
         if ($Startup) {
             # Never use New-Item -Force here: on an existing key it recreates it and wipes every other app's startup entry.
-            if (-not (Test-Path $RunKey)) { New-Item -Path $RunKey | Out-Null }
+            Confirm-RegistryKey $RunKey
             Set-ItemProperty -Path $RunKey -Name $RunValue -Value "`"$exe`" --autostart"
             Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run' -Name $RunValue -ErrorAction SilentlyContinue
             Say 'Will start with Windows'

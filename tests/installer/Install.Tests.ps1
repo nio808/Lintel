@@ -35,6 +35,17 @@ Check 'checksum: finds text-mode entry'   { (Get-ChecksumFromText $sums 'Lintel-
 Check 'checksum: binary marker + case'    { (Get-ChecksumFromText $sums 'INSTALL.ps1') -eq $H.ToLower() }
 Check 'checksum: unknown file -> null'    { $null -eq (Get-ChecksumFromText $sums 'other.exe') }
 Check 'checksum: short hash rejected'     { $null -eq (Get-ChecksumFromText "abc123  x.exe" 'x.exe') }
+
+# Fresh profiles may lack ...\CurrentVersion\Uninstall; keys must be created with their parents,
+# and an existing key must keep its values.
+$tk = 'HKCU:\Software\LintelTest'
+try {
+    Confirm-RegistryKey "$tk\a\b"
+    Check 'registry: creates key with missing parents' { Test-Path "$tk\a\b" }
+    Set-ItemProperty "$tk\a" -Name keep -Value 1
+    Confirm-RegistryKey "$tk\a"
+    Check 'registry: existing key keeps its values'    { (Get-ItemProperty "$tk\a").keep -eq 1 }
+} finally { Remove-Item $tk -Recurse -ErrorAction SilentlyContinue }
 Check 'url: latest'     { (Get-AssetUrl 'o/r' '' 'a.zip') -eq 'https://github.com/o/r/releases/latest/download/a.zip' }
 Check 'url: version'    { (Get-AssetUrl 'o/r' '1.2.3' 'a.zip') -eq 'https://github.com/o/r/releases/download/v1.2.3/a.zip' }
 Check 'url: v-version'  { (Get-AssetUrl 'o/r' 'v1.2.3' 'a.zip') -eq 'https://github.com/o/r/releases/download/v1.2.3/a.zip' }
