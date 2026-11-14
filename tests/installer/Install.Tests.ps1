@@ -65,7 +65,7 @@ try {
 
 # --- -DryRun changes nothing
 $uk = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Lintel'
-$runBefore = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' | Out-String)
+$runBefore = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue | Out-String)   # fresh CI profiles may have no Run key
 $ukBefore = Test-Path $uk
 $tempBefore = @(Get-ChildItem ([IO.Path]::GetTempPath()) -Directory -Filter 'Lintel-*' -ErrorAction SilentlyContinue).Count
 $r = Run-Script @('-DryRun', '-Source', 'C:\nope\Lintel-win-x64.zip', '-InstallDir', 'C:\Temp\UN', '-Startup')
@@ -83,7 +83,7 @@ Check 'missing -Source: fails, nonzero'         { $r6.Code -ne 0 -and $r6.Out -m
 $r7 = Run-Script @('-Version', 'not-a-version', '-DryRun')
 Check 'bad -Version rejected'                   { $r7.Code -ne 0 -and $r7.Out -match 'not a version' }
 Check 'dryrun left registry and temp untouched' {
-    ((Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' | Out-String) -eq $runBefore) -and ((Test-Path $uk) -eq $ukBefore) -and
+    ((Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue | Out-String) -eq $runBefore) -and ((Test-Path $uk) -eq $ukBefore) -and
     (@(Get-ChildItem ([IO.Path]::GetTempPath()) -Directory -Filter 'Lintel-*' -ErrorAction SilentlyContinue).Count -eq $tempBefore)
 }
 
@@ -128,6 +128,7 @@ if ($ukBefore -or $mutexHeld -or (Test-Path (Join-Path $env:LOCALAPPDATA 'Progra
 
         [IO.File]::WriteAllText((Join-Path $work 'SHA256SUMS.txt'), "$good  Lintel-win-x64.zip`n")
         # Regression: -Startup once recreated the Run key and wiped every other app's startup entry.
+        Confirm-RegistryKey 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
         Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name LintelTestSentinel -Value 'keep-me'
         $ri = Run-Script @('-Source', $zip, '-InstallDir', $dir, '-NoLaunch', '-Startup')
         Check 'install: -Startup keeps other apps'' startup entries' { (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run').LintelTestSentinel -eq 'keep-me' }
