@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Lintel.Preview.exe <moduleId...|all|agents-data> [demo] [screenshot <dir>]  (switches take a double-dash prefix)
+    Build with -p:Only=Agents|AgentsData|Media|Tools|Stash to reference a single module project.
+      Agents     = Agents.UI only (fed by an empty IAgentUsageService)
+      AgentsData = the agents data project only: "agents-data" dumps the snapshot as text
+      (empty)    = everything; agents uses AgentsData.CreateService
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Lintel.Core\Lintel.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Only)' == '' or '$(Only)' == 'Agents'">
+    <ProjectReference Include="..\..\src\Lintel.Agents.UI\Lintel.Agents.UI.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Only)' == '' or '$(Only)' == 'Agents'">
+    <DefineConstants>$(DefineConstants);PREVIEW_AGENTS_UI</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Only)' == '' or '$(Only)' == 'AgentsData'">
+    <ProjectReference Include="..\..\src\Lintel.Agents\Lintel.Agents.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Only)' == '' or '$(Only)' == 'AgentsData'">
+    <DefineConstants>$(DefineConstants);PREVIEW_AGENTS_DATA</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Only)' == '' or '$(Only)' == 'Media'">
+    <ProjectReference Include="..\..\src\Lintel.Media\Lintel.Media.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Only)' == '' or '$(Only)' == 'Media'">
+    <DefineConstants>$(DefineConstants);PREVIEW_MEDIA</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Only)' == '' or '$(Only)' == 'Tools'">
+    <ProjectReference Include="..\..\src\Lintel.Tools\Lintel.Tools.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Only)' == '' or '$(Only)' == 'Tools'">
+    <DefineConstants>$(DefineConstants);PREVIEW_TOOLS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Only)' == '' or '$(Only)' == 'Stash'">
+    <ProjectReference Include="..\..\src\Lintel.Stash\Lintel.Stash.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Only)' == '' or '$(Only)' == 'Stash'">
+    <DefineConstants>$(DefineConstants);PREVIEW_STASH</DefineConstants>
+  </PropertyGroup>
+
+</Project>

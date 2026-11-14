@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Lintel.Core/Lintel.Core.csproj" />
+    <Project Path="src/Lintel.Notch/Lintel.Notch.csproj" />
+    <Project Path="src/Lintel.Agents/Lintel.Agents.csproj" />
+    <Project Path="src/Lintel.Agents.UI/Lintel.Agents.UI.csproj" />
+    <Project Path="src/Lintel.Media/Lintel.Media.csproj" />
+    <Project Path="src/Lintel.Tools/Lintel.Tools.csproj" />
+    <Project Path="src/Lintel.Stash/Lintel.Stash.csproj" />
+    <Project Path="src/Lintel.App/Lintel.App.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Lintel.Preview/Lintel.Preview.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lintel.App.Tests/Lintel.App.Tests.csproj" />
+    <Project Path="tests/Lintel.Core.Tests/Lintel.Core.Tests.csproj" />
+    <Project Path="tests/Lintel.Notch.Tests/Lintel.Notch.Tests.csproj" />
+    <Project Path="tests/Lintel.Agents.Tests/Lintel.Agents.Tests.csproj" />
+    <Project Path="tests/Lintel.Media.Tests/Lintel.Media.Tests.csproj" />
+    <Project Path="tests/Lintel.Tools.Tests/Lintel.Tools.Tests.csproj" />
+    <Project Path="tests/Lintel.Stash.Tests/Lintel.Stash.Tests.csproj" />
+  </Folder>
+  <Folder Name="/solution/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path=".editorconfig" />
+  </Folder>
+</Solution>

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting guide
+    about: Usual fixes: SmartScreen, notch not visible, Codex or Claude limits.
+    url: https://github.com/nio808/Lintel/blob/main/docs/TROUBLESHOOTING.md
+  - name: Security vulnerability
+    about: Please report security problems privately.
+    url: https://github.com/nio808/Lintel/security/advisories/new

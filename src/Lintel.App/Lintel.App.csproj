@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>Lintel</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <TieredPGO>true</TieredPGO>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!-- Publish: self-contained single file, ReadyToRun. build.ps1 -CompressExe passes -p:CompressExe=true. -->
+  <PropertyGroup>
+    <CompressExe Condition="'$(CompressExe)' == ''">false</CompressExe>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>$(CompressExe)</EnableCompressionInSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <!-- WPF-UI.Tray is not referenced. Its NotifyIcon needs Application.MainWindow as parent, focuses that window on
+       left click and has no balloons; Tray\TrayIcon.cs is a ~150-line Shell_NotifyIcon wrapper instead. -->
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lintel.Core\Lintel.Core.csproj" />
+    <ProjectReference Include="..\Lintel.Notch\Lintel.Notch.csproj" />
+    <ProjectReference Include="..\Lintel.Agents\Lintel.Agents.csproj" />
+    <ProjectReference Include="..\Lintel.Agents.UI\Lintel.Agents.UI.csproj" />
+    <ProjectReference Include="..\Lintel.Media\Lintel.Media.csproj" />
+    <ProjectReference Include="..\Lintel.Tools\Lintel.Tools.csproj" />
+    <ProjectReference Include="..\Lintel.Stash\Lintel.Stash.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\tray.ico" />
+    <Resource Include="Assets\tray-update.ico" />
+  </ItemGroup>
+
+</Project>

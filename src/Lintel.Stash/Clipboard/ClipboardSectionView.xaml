@@ -1,0 +1,88 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<UserControl x:Class="Lintel.Stash.ClipboardSectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Lintel.Core.Controls;assembly=Lintel.Core"
+             xmlns:local="clr-namespace:Lintel.Stash">
+    <Grid Margin="0,2,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Search + actions -->
+        <Grid Grid.Row="0" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid>
+                <TextBox x:Name="Search" Padding="26,3,6,3" TextChanged="OnSearchChanged" PreviewKeyDown="OnSearchKeyDown" />
+                <TextBlock Style="{DynamicResource Notch.Icon}" Text="{x:Static c:Glyphs.Search}" Margin="8,0,0,0"
+                           HorizontalAlignment="Left" IsHitTestVisible="False" Foreground="{DynamicResource Notch.TextTertiary}" />
+                <TextBlock x:Name="Placeholder" Style="{DynamicResource Notch.Body}" Text="Search clipboard" Margin="26,0,0,0" VerticalAlignment="Center"
+                           IsHitTestVisible="False" Foreground="{DynamicResource Notch.TextTertiary}" />
+            </Grid>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="6,0,0,0">
+                <TextBlock x:Name="CopiedText" Style="{DynamicResource Notch.Caption}" Text="Copied" VerticalAlignment="Center" Margin="0,0,6,0"
+                           Foreground="{DynamicResource Tone.Success}" Visibility="Collapsed" />
+                <ToggleButton x:Name="PauseButton" Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Pause}"
+                              ToolTip="Pause capture" Click="OnPauseClick" />
+                <Button x:Name="ClearButton" Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Trash}"
+                        ToolTip="Clear history (pinned entries stay)" Click="OnClearClick" />
+                <StackPanel x:Name="ConfirmPanel" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock Style="{DynamicResource Notch.Caption}" Text="Clear unpinned?" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <Button Style="{DynamicResource Notch.PillButton}" Content="Clear" Padding="8,2" MinHeight="20" Foreground="{DynamicResource Tone.Critical}" Click="OnClearConfirm" />
+                    <Button Style="{DynamicResource Notch.PillButton}" Content="Keep" Padding="8,2" MinHeight="20" Margin="4,0,0,0" Click="OnClearCancel" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- History -->
+        <ListBox x:Name="List" Grid.Row="1" ScrollViewer.CanContentScroll="True" VirtualizingPanel.ScrollUnit="Pixel"
+                 VirtualizingPanel.IsVirtualizing="True" PreviewMouseLeftButtonUp="OnListClick" PreviewKeyDown="OnListKeyDown">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type local:ClipRow}">
+                    <Grid MinHeight="28">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="22" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{DynamicResource Notch.Icon}" Text="{Binding KindGlyph}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Notch.TextSecondary}" />
+                        <TextBlock Grid.Column="1" Style="{DynamicResource Notch.Body}" Text="{Binding Preview}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                                   MaxHeight="30" VerticalAlignment="Center" Visibility="{Binding TextVisibility}" />
+                        <Image Grid.Column="1" Source="{Binding Thumbnail}" Height="36" HorizontalAlignment="Left" Stretch="Uniform" Visibility="{Binding ImageVisibility}"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,2,0">
+                            <TextBlock Style="{DynamicResource Notch.Icon}" Text="{x:Static c:Glyphs.Pin}" Margin="0,0,3,0"
+                                       Foreground="{DynamicResource Notch.Accent}" Visibility="{Binding PinnedVisibility}" />
+                            <TextBlock Style="{DynamicResource Notch.Caption}" Text="{Binding Age}" MinWidth="24" TextAlignment="Right" />
+                        </StackPanel>
+                        <StackPanel x:Name="Actions" Grid.Column="3" Orientation="Horizontal" Opacity="0">
+                            <Button Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Pin}" Width="20" Height="20"
+                                    ToolTip="Pin / unpin" Tag="pin" />
+                            <Button Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Close}" Width="20" Height="20"
+                                    ToolTip="Delete" Tag="delete" />
+                        </StackPanel>
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                            <Setter TargetName="Actions" Property="Opacity" Value="1" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                            <Setter TargetName="Actions" Property="Opacity" Value="1" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
+            <TextBlock Style="{DynamicResource Notch.Icon}" Text="{x:Static c:Glyphs.Clipboard}" FontSize="20" Foreground="{DynamicResource Notch.TextTertiary}" />
+            <TextBlock x:Name="EmptyText" Style="{DynamicResource Notch.Caption}" Margin="0,4,0,0" HorizontalAlignment="Center" Text="Nothing copied yet" />
+        </StackPanel>
+    </Grid>
+</UserControl>

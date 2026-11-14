@@ -1,0 +1,38 @@
+{
+ "rateLimits": {
+  "limitId": "codex",
+  "planType": "pro"
+ },
+ "rateLimitsByLimitId": {
+  "codex": {
+   "planType": "pro",
+   "primary": {
+    "usedPercent": 8,
+    "windowDurationMins": 300,
+    "resetsAt": 1794232800
+   },
+   "secondary": {
+    "usedPercent": 20,
+    "windowDurationMins": 10080,
+    "resetsAt": 1794700000
+   },
+   "credits": {
+    "hasCredits": true,
+    "unlimited": true
+   }
+  },
+  "codex_other": {
+   "limitName": "GPT-6 Sol",
+   "planType": "pro",
+   "primary": {
+    "usedPercent": 55,
+    "windowDurationMins": 300,
+    "resetsAt": 1794232800
+   },
+   "credits": {
+    "hasCredits": true,
+    "balance": "12.50"
+   }
+  }
+ }
+}

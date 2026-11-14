@@ -1,0 +1,22 @@
+{
+ "limits": [
+  {
+   "kind": "session",
+   "percent": 42,
+   "resets_at": "2026-11-15T18:00:00Z"
+  },
+  {
+   "kind": "weekly_all",
+   "percent": 70.5,
+   "resets_at": "2026-11-18T09:00:00Z"
+  },
+  {
+   "kind": "weekly_opus",
+   "percent": 5,
+   "resets_at": null
+  }
+ ],
+ "extra_usage": {
+  "is_enabled": false
+ }
+}

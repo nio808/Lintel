@@ -1,0 +1,8 @@
+{"timestamp":"2026-11-15T10:00:00.000Z","type":"session_meta","payload":{"id":"sess-root","cwd":"C:\\work\\codex-proj","source":"cli"}}
+{"timestamp":"2026-11-15T10:00:01.000Z","type":"turn_context","payload":{"model":"gpt-6.1-sol","cwd":"C:\\work\\codex-proj","service_tier":"fast"}}
+{"timestamp":"2026-11-15T10:00:02.000Z","type":"event_msg","payload":{"type":"task_started"}}
+{"timestamp":"2026-11-15T10:00:10.000Z","type":"token_usage_record","payload":{"response_id":"r1","usage":{"input_tokens":1000,"cached_input_tokens":600,"output_tokens":50,"reasoning_output_tokens":20}}}
+{"timestamp":"2026-11-15T10:00:10.500Z","type":"token_usage_record","payload":{"response_id":"r1","usage":{"input_tokens":1000,"cached_input_tokens":600,"output_tokens":50,"reasoning_output_tokens":20}}}
+{"timestamp":"2026-11-15T10:00:11.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"limit_id":"codex","plan_type":"plus","primary":{"used_percent":15.0,"window_minutes":300,"resets_at":1794232800},"secondary":{"used_percent":40,"window_minutes":10080,"resets_in_seconds":86400}}}}
+{"timestamp":"2026-11-15T10:00:12.000Z","type":"event_msg","payload":{"type":"token_count","rate_limits":{"limit_id":"codex_other","primary":{"used_percent":99,"window_minutes":300,"resets_at":1794232800}}}}
+{"timestamp":"2026-11-15T10:02:00.000Z","type":"event_msg","payload":{"type":"task_complete"}}

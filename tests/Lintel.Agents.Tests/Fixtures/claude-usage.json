@@ -1,0 +1,31 @@
+{
+ "five_hour": {
+  "utilization": 37.5,
+  "resets_at": "2026-11-15T18:00:00.000000+00:00"
+ },
+ "seven_day": {
+  "utilization": 61,
+  "resets_at": "2026-11-18T09:00:00+00:00"
+ },
+ "seven_day_sonnet": {
+  "utilization": 12,
+  "resets_at": "2026-11-18T09:00:00+00:00"
+ },
+ "seven_day_opus": {
+  "utilization": 22.2,
+  "resets_at": null
+ },
+ "extra_usage": {
+  "is_enabled": true,
+  "monthly_limit": 5000,
+  "used_credits": 0
+ },
+ "spend": {
+  "enabled": true,
+  "balance": {
+   "amount_minor": 1250,
+   "exponent": 2,
+   "currency": "USD"
+  }
+ }
+}

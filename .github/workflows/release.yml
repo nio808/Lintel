@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build, test, package
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: ./build.ps1 -All -Version ($env:TAG.TrimStart('v'))
+      - name: Check the three assets exist
+        shell: pwsh
+        run: |
+          foreach ($f in 'Lintel-win-x64.zip', 'SHA256SUMS.txt', 'install.ps1') {
+            if (-not (Test-Path "artifacts/release/$f")) { throw "missing release asset: $f" }
+          }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/release/Lintel-win-x64.zip
+            artifacts/release/SHA256SUMS.txt
+            artifacts/release/install.ps1
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

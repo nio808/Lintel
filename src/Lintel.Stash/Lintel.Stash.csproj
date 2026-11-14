@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lintel.Core\Lintel.Core.csproj" />
+  </ItemGroup>
+
+</Project>

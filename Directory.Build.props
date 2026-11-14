@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <Company>Lintel</Company>
+    <Product>Lintel</Product>
+    <Copyright>GPL-3.0-or-later</Copyright>
+    <RepositoryOwner>nio808</RepositoryOwner>
+    <RepositoryName>Lintel</RepositoryName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="RepositoryOwner" Value="$(RepositoryOwner)" />
+    <AssemblyMetadata Include="RepositoryName" Value="$(RepositoryName)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectDirectory.Contains('\src\'))">
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+  </ItemGroup>
+</Project>

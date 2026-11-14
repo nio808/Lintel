@@ -1,0 +1,64 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<UserControl x:Class="Lintel.Stash.DownloadsSectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Lintel.Core.Controls;assembly=Lintel.Core"
+             xmlns:local="clr-namespace:Lintel.Stash">
+    <Grid Margin="0,2,0,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,8,0">
+                <TextBlock x:Name="ActiveHeader" Style="{DynamicResource Notch.Caption}" Text="In progress" Margin="0,0,0,4" />
+                <ItemsControl x:Name="ActiveList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:DownloadRow}">
+                            <Border Style="{DynamicResource Notch.Card}" Padding="10,7" Margin="0,0,0,4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Style="{DynamicResource Notch.Body}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Style="{DynamicResource Notch.Caption}" Text="{Binding Detail}" Margin="0,1,0,4" />
+                                        <c:MeterBar IsIndeterminate="True" Fill="{DynamicResource Notch.Accent}" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Folder}" ToolTip="Show in folder"
+                                            VerticalAlignment="Top" Margin="6,0,-4,0" Tag="{Binding Path}" Click="OnReveal" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock x:Name="RecentHeader" Style="{DynamicResource Notch.Caption}" Text="Recent" Margin="0,4,0,4" />
+                <ItemsControl x:Name="RecentList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:DownloadRow}">
+                            <Grid Margin="0,0,0,1" MinHeight="28">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{DynamicResource Notch.Icon}" Text="{x:Static c:Glyphs.Check}" Foreground="{DynamicResource Tone.Success}" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Style="{DynamicResource Notch.Body}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Style="{DynamicResource Notch.Caption}" Text="{Binding Detail}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <Button Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.OpenExternal}" ToolTip="Open" Tag="{Binding Path}" Click="OnOpen" />
+                                    <Button Style="{DynamicResource Notch.IconButton}" Content="{x:Static c:Glyphs.Folder}" ToolTip="Show in folder" Tag="{Binding Path}" Click="OnReveal" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel x:Name="EmptyState" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
+            <TextBlock Style="{DynamicResource Notch.Icon}" Text="{x:Static c:Glyphs.Download}" FontSize="20" Foreground="{DynamicResource Notch.TextTertiary}" />
+            <TextBlock Style="{DynamicResource Notch.Caption}" Text="No downloads right now" Margin="0,4,0,0" HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

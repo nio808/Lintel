@@ -1,0 +1,9 @@
+{"type":"session.start","id":"e1","timestamp":"2026-11-15T10:00:00.000Z","data":{"sessionId":"cp1","selectedModel":"gpt-5","context":{"cwd":"C:\\work\\cop-proj"}}}
+{"type":"user.message","id":"e2","timestamp":"2026-11-15T10:00:01.000Z","data":{"content":"hi"}}
+{"type":"assistant.turn_start","id":"e3","timestamp":"2026-11-15T10:00:02.000Z","data":{"turnId":"t1"}}
+{"type":"assistant.message","id":"e4","timestamp":"2026-11-15T10:00:03.000Z","data":{"messageId":"m1","apiCallId":"a1","toolRequests":[{"name":"x"}]}}
+{"type":"assistant.turn_end","id":"e5","timestamp":"2026-11-15T10:00:04.000Z","data":{"turnId":"t1"}}
+{"type":"assistant.message","id":"e6","timestamp":"2026-11-15T10:00:05.000Z","data":{"messageId":"m2","apiCallId":"a2","toolRequests":[]}}
+{"type":"assistant.turn_end","id":"e7","timestamp":"2026-11-15T10:00:06.000Z","data":{"turnId":"t1"}}
+{"type":"session.shutdown","id":"e8","timestamp":"2026-11-15T10:05:00.000Z","data":{"modelMetrics":{"gpt-5":{"requests":{"count":2},"usage":{"inputTokens":3000,"outputTokens":400,"cacheReadTokens":1000,"cacheWriteTokens":0,"reasoningTokens":50}}}}}
+{"type":"session.shutdown","id":"e9","timestamp":"2026-11-15T11:05:00.000Z","data":{"modelMetrics":{"gpt-5":{"requests":{"count":3},"usage":{"inputTokens":3500,"outputTokens":450,"cacheReadTokens":1200,"cacheWriteTokens":0,"reasoningTokens":60}}}}}
