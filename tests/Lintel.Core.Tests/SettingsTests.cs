@@ -72,10 +72,20 @@ public sealed class SettingsTests : IDisposable
 
         store.Set("b", 2);
         var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (!File.ReadAllText(path).Contains("\"b\"") && DateTime.UtcNow < deadline)
+        while (!ReadWhenFree(path).Contains("\"b\"") && DateTime.UtcNow < deadline)
             Thread.Sleep(50);
-        Assert.Contains("\"b\"", File.ReadAllText(path));
+        Assert.Contains("\"b\"", ReadWhenFree(path));
         Assert.False(File.Exists(path + ".tmp"));
+    }
+
+    // The debounced save replaces the file on a timer thread; a read that lands mid-replace gets a sharing violation.
+    private static string ReadWhenFree(string path)
+    {
+        for (var i = 0; ; i++)
+        {
+            try { return File.ReadAllText(path); }
+            catch (IOException) when (i < 40) { Thread.Sleep(25); }
+        }
     }
 
     [Fact]
