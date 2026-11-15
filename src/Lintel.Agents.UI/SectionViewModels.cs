@@ -42,11 +42,23 @@ internal sealed class LimitsCardVm : CardVm
         this.state = state;
         AccountId = accountId;
         RefreshCommand = new AsyncRelayCommand(() => state.Service.RefreshLimitsAsync(AccountId), AsyncRelayCommandOptions.AllowConcurrentExecutions);
+        SignInCommand = new AsyncRelayCommand(SignInAsync);
     }
 
     public string AccountId { get; }
     public override string Key => "limits:" + AccountId;
     public IAsyncRelayCommand RefreshCommand { get; }
+    public IAsyncRelayCommand SignInCommand { get; }
+    public bool SignInNeeded { get; set => SetProperty(ref field, value); }
+
+    /// <summary>Opens <c>claude auth login</c>; once that console closes, reads the limits again. No CLI: opens the setup page.</summary>
+    private async Task SignInAsync()
+    {
+        if (await ClaudeCli.SignInAsync())
+            await state.Service.RefreshLimitsAsync(AccountId);
+        else
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ClaudeCli.SetupUrl) { UseShellExecute = true })?.Dispose();
+    }
     public ObservableCollection<LimitRowVm> Rows { get; } = [];
 
     public AgentProvider Provider
@@ -81,6 +93,7 @@ internal sealed class LimitsCardVm : CardVm
         Title = AgentDisplay.AccountTitle(provider, account);
         Plan = limits?.Plan?.Name;
         IsStale = limits?.IsStale == true;
+        SignInNeeded = provider == AgentProvider.Claude && limits?.Error == ClaudeCli.SignInMessage;
         IsBlocked = limits?.Blocked == true;
         IsWorking = state.Live.Any(s => s.Provider == provider) && (account?.IsDefault ?? true);
         var windows = (limits?.Windows ?? [])

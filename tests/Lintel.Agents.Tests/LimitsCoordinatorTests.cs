@@ -124,6 +124,18 @@ public sealed class LimitsCoordinatorTests
     }
 
     [Fact]
+    public async Task ManualRefreshAfterASignInFailureSkipsTheBackoff()
+    {
+        var r = new Rig(Claude);
+        r.Fail(LimitFailure.Auth);
+        await r.Tick();
+        r.Time.Advance(TimeSpan.FromMinutes(1));
+        Assert.True(await r.Coordinator.RefreshAsync(null, CancellationToken.None));   // the user may just have signed in
+        Assert.Equal(2, r.Reads);
+        Assert.False(r.Only.IsStale);
+    }
+
+    [Fact]
     public async Task RateLimitBackoffHonoursRetryAfterEvenOnManualRefresh()
     {
         var r = new Rig(Claude);

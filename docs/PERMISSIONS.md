@@ -5,7 +5,7 @@ Windows does not sandbox desktop apps, so these are promises the app enforces on
 | Permission id | In plain words | Touches | Leaves the PC? | Used by |
 |---|---|---|---|---|
 | `agents.logs` | Read how many tokens your coding agents used | Session logs of Claude, Codex, Copilot, OpenCode: counts, model, folder name, times. Never prompts or replies. | No | AI Agents |
-| `claude.credentials` | Use your Claude sign-in to ask Anthropic how much plan quota is left | Reads the access token in `.claude\.credentials.json` each check; never writes it | Yes: token sent only to `api.anthropic.com` | AI Agents (optional) |
+| `claude.credentials` | Use your Claude sign-in to ask Anthropic how much plan quota is left | Reads the access token in `.claude\.credentials.json` each check; never writes it. When it expires, runs `claude auth status` so the CLI renews it | Yes: token sent only to `api.anthropic.com` | AI Agents (optional) |
 | `claude.app-history` | Read the quota history the Claude desktop app saves | `%APPDATA%\Claude\plan-usage-history.json` | No | AI Agents (optional) |
 | `codex.cli` | Run your Codex CLI in the background to ask for plan limits | Starts a hidden `codex app-server`, which talks to OpenAI with Codex's own login; ended after each check | Codex itself contacts OpenAI | AI Agents (optional) |
 | `network.prices` | Download the latest model price list once a day | Nothing of yours is sent | Yes: `raw.githubusercontent.com` (GET only) | AI Agents (optional) |

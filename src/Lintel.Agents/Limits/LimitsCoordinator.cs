@@ -22,6 +22,7 @@ internal sealed class LimitsCoordinator(
         public DateTimeOffset? FailedAt { get; set; }
         public DateTimeOffset NextAttempt { get; set; }
         public int Failures { get; set; }
+        public LimitFailure LastFailure { get; set; }
         public string? Error { get; set; }
         public AgentLimits? Composed { get; set; }
     }
@@ -77,8 +78,8 @@ internal sealed class LimitsCoordinator(
     }
 
     /// <summary>
-    /// User-initiated refresh. At most one successful read per 30 s per account; back-off is respected.
-    /// Returns true when a read was attempted.
+    /// User-initiated refresh. At most one successful read per 30 s per account; back-off is respected, except after a
+    /// sign-in failure (the user may just have signed in again). Returns true when a read was attempted.
     /// </summary>
     public async Task<bool> RefreshAsync(string? accountId, CancellationToken ct)
     {
@@ -92,7 +93,7 @@ internal sealed class LimitsCoordinator(
             {
                 var now = time.GetUtcNow();
                 allowed = canReadAccount(s.Account)
-                          && !(s.Failures > 0 && now < s.NextAttempt)
+                          && !(s.Failures > 0 && now < s.NextAttempt && s.LastFailure != LimitFailure.Auth)
                           && !(s.LastSuccess is { } ok && now - ok < BackoffPolicy.ManualMinimum);
             }
             if (allowed) { await CheckAsync(s, ct).ConfigureAwait(false); attempted = true; }
@@ -135,6 +136,7 @@ internal sealed class LimitsCoordinator(
                 {
                     s.Failures++;
                     s.FailedAt = now;
+                    s.LastFailure = BackoffPolicy.KindOf(error!);
                     s.Error = BackoffPolicy.Friendly(error!);
                     s.NextAttempt = now + BackoffPolicy.Delay(BackoffPolicy.KindOf(error!), s.Failures, (error as LimitReadException)?.RetryAfter);
                 }

@@ -30,7 +30,7 @@ public static class PermissionCatalog
             null, null),
         new(PermissionIds.ClaudeCredentials, "Claude sign-in",
             "Use your Claude Code sign-in to ask Anthropic how much plan quota is left",
-            @"Reads the access token in .claude\.credentials.json each check; never writes it",
+            @"Reads the access token in .claude\.credentials.json each check; never writes it. When it expires, runs `claude auth status` so the CLI renews it",
             "api.anthropic.com (the token is sent only there)", null),
         new(PermissionIds.ClaudeAppHistory, "Claude app quota history",
             "Read the quota history the Claude desktop app saves",

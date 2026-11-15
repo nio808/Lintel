@@ -35,8 +35,9 @@ public sealed class ClaudeOAuthReaderTests : IDisposable
         }
     }
 
-    private ClaudeOAuthReader Reader(Handler h) =>
-        new(new HttpClient(h), time, () => PriceSource.Embedded(), dir);
+    // Tests never start the real CLI: renewal is a no-op unless a test supplies one.
+    private ClaudeOAuthReader Reader(Handler h, Func<CancellationToken, Task>? renew = null) =>
+        new(new HttpClient(h), time, () => PriceSource.Embedded(), dir, renew: renew ?? (_ => Task.CompletedTask));
 
     private static HttpResponseMessage Json(string body, HttpStatusCode code = HttpStatusCode.OK) =>
         new(code) { Content = new StringContent(body) };
@@ -81,7 +82,7 @@ public sealed class ClaudeOAuthReaderTests : IDisposable
         var stamp = File.GetLastWriteTimeUtc(Credentials);
 
         await Reader(new Handler(_ => Json(T.Fixture("claude-usage.json")))).ReadAsync(CancellationToken.None);
-        await Fail(new Handler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized)));   // even a 401 never rotates or refreshes
+        await Fail(new Handler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized)));   // Lintel itself never writes it, not even on a 401
 
         Assert.Equal(hash, SHA256.HashData(File.ReadAllBytes(Credentials)));
         Assert.Equal(stamp, File.GetLastWriteTimeUtc(Credentials));
@@ -99,6 +100,46 @@ public sealed class ClaudeOAuthReaderTests : IDisposable
         Assert.Equal(["Bearer " + Token, "Bearer renewed-token-1111"], h.Requests.Select(r => r.Auth));
 
         static string WriteSwapped(string token) => $$"""{"claudeAiOauth":{"accessToken":"{{token}}"} }""";
+    }
+
+    [Fact]
+    public async Task AnExpiredTokenIsRenewedByTheCliAndRetriedOnce()
+    {
+        WriteCredentials();
+        var h = new Handler(r => r.Headers.Authorization?.Parameter == Token
+            ? new HttpResponseMessage(HttpStatusCode.Unauthorized)
+            : Json(T.Fixture("claude-usage.json")));
+        var renewals = 0;
+        var limits = await Reader(h, _ =>
+        {
+            renewals++;
+            File.WriteAllText(Credentials, """{"claudeAiOauth":{"accessToken":"renewed-by-cli-2222","subscriptionType":"max"} }""");
+            return Task.CompletedTask;
+        }).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(1, renewals);
+        Assert.Equal(["Bearer " + Token, "Bearer renewed-by-cli-2222"], h.Requests.Select(r => r.Auth));
+        Assert.Equal(4, limits.Windows.Count);
+    }
+
+    [Fact]
+    public async Task ARenewalThatChangesNothingDoesNotRetry()
+    {
+        WriteCredentials();
+        var h = new Handler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
+        var e = await Assert.ThrowsAsync<LimitReadException>(() => Reader(h).ReadAsync(CancellationToken.None));
+        Assert.Single(h.Requests);
+        Assert.Equal(ClaudeCli.SignInMessage, e.Message);
+    }
+
+    [Fact]
+    public void TheCliRunsWithoutTheVariablesOfTheSessionThatStartedLintel()
+    {
+        var info = ClaudeCli.StartInfo(@"C:\x\claude.cmd", @"D:\cfg", "auth", "status");
+        Assert.EndsWith("cmd.exe", info.FileName, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(["/d", "/c", @"C:\x\claude.cmd", "auth", "status"], info.ArgumentList);
+        Assert.Equal(@"D:\cfg", info.Environment["CLAUDE_CONFIG_DIR"]);
+        Assert.DoesNotContain(info.Environment.Keys, k => k.StartsWith("ANTHROPIC_") || k.StartsWith("CLAUDE_CODE_") || k == "CLAUDECODE");
     }
 
     [Fact]
@@ -137,7 +178,7 @@ public sealed class ClaudeOAuthReaderTests : IDisposable
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.Unauthorized, "Claude login expired. Open `claude` to renew it, then refresh.")]
+    [InlineData(HttpStatusCode.Unauthorized, ClaudeCli.SignInMessage)]
     [InlineData(HttpStatusCode.Forbidden, "Claude denied the usage read. Check your subscription login.")]
     public async Task AuthFailuresUseFixedWordingAndTheFifteenMinuteBackoff(HttpStatusCode code, string message)
     {

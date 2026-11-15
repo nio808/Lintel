@@ -98,6 +98,13 @@
                             <Border Style="{StaticResource Chip}" Background="#2EF5B83D" Visibility="{Binding IsStale, Converter={StaticResource Show}}">
                                 <TextBlock Text="Last known" Style="{StaticResource ChipText}" Foreground="{DynamicResource Tone.Warning}" />
                             </Border>
+                            <Border Style="{StaticResource Chip}" Background="{Binding Brush}" Cursor="Hand" ToolTip="Opens claude auth login, then reads your limits again"
+                                    Visibility="{Binding SignInNeeded, Converter={StaticResource Show}}">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding SignInCommand}" />
+                                </Border.InputBindings>
+                                <TextBlock Text="Sign in" Style="{StaticResource ChipText}" Foreground="White" />
+                            </Border>
                             <Border Style="{StaticResource Chip}" Background="#33FF5C5C" Visibility="{Binding IsBlocked, Converter={StaticResource Show}}">
                                 <TextBlock Text="Limit reached" Style="{StaticResource ChipText}" Foreground="{DynamicResource Tone.Critical}" />
                             </Border>
