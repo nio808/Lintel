@@ -130,7 +130,10 @@ public sealed class JobTests
     public void PillAndEtaText()
     {
         var job = new JobProgress(1, Pr, "d", JobPhase.Printing, 3, 12, 0.25, TimeSpan.FromMinutes(1.5), true);
-        Assert.Equal("3/12 · 2 min", PrinterText.Pill(job));
+        Assert.Equal("1:30", PrinterText.Pill(job));
+        Assert.Equal("Estimating", PrinterText.Pill(job with { Eta = null }));
+        Assert.Equal("25%", PrinterText.PillPercent(job.Fraction));
+        Assert.Equal("", PrinterText.PillPercent(null));
         Assert.Equal("About 2 min left", PrinterText.EtaLine(job));
         Assert.Equal("Estimating…", PrinterText.EtaLine(job with { Eta = null }));
         Assert.Equal("under 1 min", PrinterText.Eta(TimeSpan.FromSeconds(20)));
@@ -138,15 +141,6 @@ public sealed class JobTests
         Assert.Equal("Print job", PrinterText.DocumentName("secret.pdf", hide: true));
         Assert.Equal("secret.pdf", PrinterText.DocumentName("secret.pdf", hide: false));
     }
-
-    [Theory]
-    [InlineData(PrinterAction.NozzleCheck, 30, "Nozzle check · 0:30")]
-    [InlineData(PrinterAction.HeadClean, 161, "Head clean · 2:41")]
-    [InlineData(PrinterAction.PowerClean, 480, "Power clean · 8:00")]
-    [InlineData(PrinterAction.HeadClean, 0, "Head clean · 0:00")]
-    [InlineData(PrinterAction.HeadClean, -1, "Head clean · 0:00")]
-    public void MaintenancePillText(PrinterAction action, int seconds, string expected) =>
-        Assert.Equal(expected, PrinterText.Pill(action, TimeSpan.FromSeconds(seconds)));
 
     [Fact]
     public void PadResetDisplayName() => Assert.Equal("Reset", PrinterText.ActionName(PrinterAction.ResetPad));

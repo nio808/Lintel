@@ -331,11 +331,11 @@ public sealed class PrintersModule : INotchModule
     }
 }
 
-/// <summary>Pill: a progress ring on the left wing, "3/12 · 2 min" on the right.</summary>
+/// <summary>Pill: a progress ring and "42%" on the left wing, a countdown "2:41" on the right.</summary>
 internal sealed class PrintActivity : CompactActivity
 {
     private RingGauge? ring;
-    private TextBlock? label;
+    private TextBlock? label, percent;
 
     public PrintActivity() : base("printers.job", 75, PrintersModule.Id) { }
 
@@ -343,15 +343,24 @@ internal sealed class PrintActivity : CompactActivity
     {
         ring = new RingGauge { Width = 14, Height = 14, Thickness = 2, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
         ring.SetResourceReference(RingGauge.StrokeProperty, "Notch.Accent");
-        return ring;
+        percent = Caption();
+        percent.Margin = new Thickness(5, 0, 0, 0);
+        return new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, Children = { ring, percent } };
     }
 
     public override FrameworkElement? CreateTrailing()
     {
-        label = new TextBlock { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, FontWeight = FontWeights.SemiBold };
-        label.SetResourceReference(FrameworkElement.StyleProperty, "Notch.Caption");
-        label.SetResourceReference(TextBlock.ForegroundProperty, "Notch.Text");
+        label = Caption();
+        label.HorizontalAlignment = HorizontalAlignment.Right;
         return label;
+    }
+
+    private static TextBlock Caption()
+    {
+        var text = new TextBlock { VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold };
+        text.SetResourceReference(FrameworkElement.StyleProperty, "Notch.Caption");
+        text.SetResourceReference(TextBlock.ForegroundProperty, "Notch.Text");
+        return text;
     }
 
     public void Update(JobProgress? job, (string Printer, PrinterAction Action, TimeSpan Remaining)? maintenance)
@@ -359,13 +368,16 @@ internal sealed class PrintActivity : CompactActivity
         IsActive = job is not null || maintenance is not null;
         if (!IsActive)
             return;
+        double? fraction = job is not null ? job.Fraction
+            : Math.Clamp(1 - maintenance!.Value.Remaining / MaintenanceController.Lockout(maintenance.Value.Action), 0, 1);
         if (ring is not null)
         {
-            ring.Value = job is not null ? (job.Fraction ?? 0.15) * 100
-                : Math.Clamp(1 - maintenance!.Value.Remaining / MaintenanceController.Lockout(maintenance.Value.Action), 0, 1) * 100;
+            ring.Value = (fraction ?? 0.15) * 100;
             ring.SetResourceReference(RingGauge.StrokeProperty, job?.Phase == JobPhase.NeedsAttention ? "Tone.Warning" : "Notch.Accent");
         }
+        if (percent is not null)
+            percent.Text = PrinterText.PillPercent(fraction);
         if (label is not null)
-            label.Text = job is not null ? PrinterText.Pill(job) : PrinterText.Pill(maintenance!.Value.Action, maintenance.Value.Remaining);
+            label.Text = job is not null ? PrinterText.Pill(job) : Lintel.Core.Text.Format.Clock(maintenance!.Value.Remaining);
     }
 }

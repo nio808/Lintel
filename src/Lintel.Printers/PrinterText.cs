@@ -16,7 +16,8 @@ public static class PrinterText
         PrinterAction.NozzleCheck => "Nozzle check", PrinterAction.HeadClean => "Head clean", PrinterAction.PowerClean => "Power clean", _ => "Reset",
     };
 
-    public static string Pill(PrinterAction action, TimeSpan remaining) => $"{ActionName(action)} · {Format.Clock(remaining)}";
+    /// <summary>The collapsed pill's left wing: "42%"; empty when progress is unknown.</summary>
+    public static string PillPercent(double? fraction) => fraction is { } f ? Format.Percent(Math.Clamp(f, 0, 1) * 100) : "";
 
     /// <summary>"under 1 min", "2 min", "1 h 5 min".</summary>
     public static string Eta(TimeSpan t)
@@ -33,16 +34,10 @@ public static class PrinterText
     public static string Pages(JobProgress job) =>
         job.Total > 0 && job.PagesReported ? $"{Math.Min(job.Printed, job.Total)} of {job.Total} pages" : NoPageCounts;
 
-    /// <summary>The collapsed pill's right wing: "3/12 · 2 min", "Printing", "Spooling".</summary>
-    public static string Pill(JobProgress job)
-    {
-        if (job.Phase is JobPhase.NeedsAttention or JobPhase.Paused or JobPhase.Cancelling)
-            return job.PhaseText;
-        if (!job.PagesReported)
-            return job.PhaseText;
-        var pages = $"{Math.Min(job.Printed, job.Total)}/{job.Total}";
-        return job.Eta is { } eta ? $"{pages} · {Eta(eta)}" : pages;
-    }
+    /// <summary>The collapsed pill's right wing: a countdown "2:41", or the state when there is no estimate ("Printing", "Paused").</summary>
+    public static string Pill(JobProgress job) =>
+        job.Phase is JobPhase.NeedsAttention or JobPhase.Paused or JobPhase.Cancelling || !job.PagesReported ? job.PhaseText
+        : job.Eta is { } eta ? Format.Clock(eta) : "Estimating";
 
     public static string DocumentName(string document, bool hide) =>
         hide || string.IsNullOrWhiteSpace(document) ? "Print job" : document;
