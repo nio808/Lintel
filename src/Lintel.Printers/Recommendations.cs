@@ -64,7 +64,7 @@ public static class RecommendationEngine
     private static string Hours(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours} h" : $"{Math.Max(1, (int)t.TotalMinutes)} min";
 }
 
-/// <summary>Spec: read on open and after each job/clean, cached, at most every 10 minutes by itself, never during a job.</summary>
+/// <summary>Spec: read while the section is open and after a clean, cached, at most every 10 minutes, never during a job.</summary>
 public sealed class PadReadPolicy
 {
     public static readonly TimeSpan MinInterval = TimeSpan.FromMinutes(10);

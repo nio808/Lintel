@@ -9,7 +9,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <UseArtifactsOutput>true</UseArtifactsOutput>
-    <VersionPrefix>0.2.2</VersionPrefix>
+    <VersionPrefix>0.2.3</VersionPrefix>
     <Company>Lintel</Company>
     <Product>Lintel</Product>
     <Copyright>GPL-3.0-or-later</Copyright>

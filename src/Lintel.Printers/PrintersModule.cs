@@ -293,10 +293,14 @@ public sealed class PrintersModule : INotchModule
         Recompute(notify: true);
     }
 
-    /// <summary>Pad counter: only when the printer can be asked, no job is printing, and the cache is stale (10 min) or marked dirty.</summary>
+    /// <summary>Pad counter: only while the section is open (or forced after maintenance), no job is printing, and the cache is stale (10 min) or marked dirty.</summary>
     private void ReadPadIfDue(PrinterInfo? p, bool force)
     {
         if (!started || p is null || reading.Contains(p.Name) || !device.CanReadPad(p.Driver) || !Granted(PermissionIds.PrinterMaintenance) || !p.IsOnline)
+            return;
+        // Reading talks to the printer over USB, which could hold up a job that starts at the same moment:
+        // never do it in the background, only while the section is open or right after maintenance.
+        if (!force && shownViews == 0)
             return;
         var now = context!.Time.GetUtcNow();
         if (force)
