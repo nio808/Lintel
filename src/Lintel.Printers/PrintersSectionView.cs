@@ -455,7 +455,7 @@ internal sealed class PrintersSectionView : Grid, ISectionLifecycle
 
         busyBar.Visibility = running is null ? Visibility.Collapsed : Visibility.Visible;
         if (running is { } r)
-            hintText = $"{ActionName(r.Action)} running · about {Format.Clock(r.Remaining)} left. Buttons stay off until the printer is done.";
+            hintText = $"{PrinterText.ActionName(r.Action)} running · about {Format.Clock(r.Remaining)} left. Buttons stay off until the printer is done.";
         hint.Text = hintText ?? "";
         hint.Visibility = hintText is null ? Visibility.Collapsed : Visibility.Visible;
     }
@@ -469,8 +469,4 @@ internal sealed class PrintersSectionView : Grid, ISectionLifecycle
 
     private static string ConfirmLabel(PrinterAction a) => a == PrinterAction.PowerClean ? "Confirm power clean?" : MaintenanceController.HeadCleanConfirm;
 
-    private static string ActionName(PrinterAction a) => a switch
-    {
-        PrinterAction.NozzleCheck => "Nozzle check", PrinterAction.HeadClean => "Head clean", PrinterAction.PowerClean => "Power clean", _ => "Reset",
-    };
 }

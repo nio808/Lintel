@@ -12,6 +12,50 @@ public sealed class MaintenanceControllerTests
 
     private MaintenanceController Make() => new(time, device, granted.Contains);
 
+    [Theory]
+    [InlineData(PrinterAction.NozzleCheck)]
+    [InlineData(PrinterAction.HeadClean)]
+    [InlineData(PrinterAction.PowerClean)]
+    public async Task ReportsRunningActionUntilLockoutExpires(PrinterAction action)
+    {
+        var c = Make();
+        Assert.Null(c.Running());
+        await c.ClickAsync(action, Printer, false);
+        if (action != PrinterAction.NozzleCheck)
+        {
+            Assert.Null(c.Running()); // arming does not start maintenance
+            await c.ClickAsync(action, Printer, false);
+        }
+        var duration = MaintenanceController.Lockout(action);
+        Assert.Equal((Printer.Name, action, duration), c.Running()!.Value);
+        Assert.Equal($"Busy: {PrinterText.ActionName(action)} running", c.StateOf(PrinterAction.NozzleCheck, Printer, false).Reason);
+        time.Advance(duration - TimeSpan.FromSeconds(1));
+        Assert.Equal(TimeSpan.FromSeconds(1), c.Running()!.Value.Remaining);
+        Assert.Empty(c.TakeFinished());
+        time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Null(c.Running());
+        Assert.Null(c.Running(Printer.Name));
+        Assert.Equal((Printer.Name, action), Assert.Single(c.TakeFinished()));
+        Assert.Empty(c.TakeFinished());
+    }
+
+    [Fact]
+    public async Task RunningFindsAnotherPrinterAndSkipsResetPad()
+    {
+        var c = Make();
+        await c.ClickAsync(PrinterAction.ResetPad, Printer, false);
+        await c.ClickAsync(PrinterAction.ResetPad, Printer, false);
+        Assert.Null(c.Running());
+        var other = Printer with { Name = "Other" };
+        await c.ClickAsync(PrinterAction.HeadClean, other, false);
+        await c.ClickAsync(PrinterAction.HeadClean, other, false);
+        Assert.Equal((other.Name, PrinterAction.HeadClean, TimeSpan.FromMinutes(3)), c.Running()!.Value);
+        time.Advance(TimeSpan.FromMinutes(3));
+        Assert.Null(c.Running());
+        Assert.Equal(2, c.TakeFinished().Count);
+        Assert.Empty(c.TakeFinished());
+    }
+
     [Fact]
     public async Task HeadCleanNeedsASecondClickWithinFourSeconds()
     {
@@ -88,6 +132,9 @@ public sealed class MaintenanceControllerTests
         Assert.Equal(ClickResult.Failed, await c.ClickAsync(PrinterAction.HeadClean, Printer, false));
         Assert.False(done!.Success);
         Assert.Null(c.Running("EPSON"));
+        Assert.Null(c.Running());
+        time.Advance(MaintenanceController.Lockout(PrinterAction.HeadClean));
+        Assert.Empty(c.TakeFinished());
     }
 
     [Fact]

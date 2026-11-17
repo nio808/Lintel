@@ -91,7 +91,7 @@ internal static class AgentDisplay
             return window.Label;
         return window.Kind switch
         {
-            LimitKind.Session => window.Minutes is int m && m > 0 ? $"{Hours(m)}-hour" : "Session",
+            LimitKind.Session => window.Minutes is int m && m > 0 ? Days(m) ? $"{m / 1440}-day" : $"{Hours(m)}-hour" : "Session",
             LimitKind.Weekly => window.Scope is { Length: > 0 } scope ? $"Weekly · {scope}" : "Weekly",
             _ => window.Scope ?? "Limit",
         };
@@ -100,9 +100,9 @@ internal static class AgentDisplay
     /// <summary>Two-to-four characters for the pill: "5h", "wk", "Opus".</summary>
     public static string ShortLabel(AgentLimitWindow window) => window.Kind switch
     {
-        LimitKind.Session => window.Minutes is int m && m > 0 ? $"{Hours(m)}h" : "ses",
+        LimitKind.Session => window.Minutes is int m && m > 0 ? Days(m) ? $"{m / 1440}d" : $"{Hours(m)}h" : "ses",
         LimitKind.Weekly => window.Scope is { Length: > 0 } scope ? Trim(scope, 4) : "wk",
-        _ => window.Minutes is int m && m >= 60 ? $"{Hours(m)}h" : Trim(window.Scope ?? window.Label, 4),
+        _ => window.Minutes is int m && m >= 60 ? Days(m) ? $"{m / 1440}d" : $"{Hours(m)}h" : Trim(window.Scope ?? window.Label, 4),
     };
 
     /// <summary>
@@ -218,6 +218,8 @@ internal static class AgentDisplay
     public static string Count(long value) => value.ToString("#,0", Inv);
 
     private static string Hours(int minutes) => (minutes / 60d).ToString("0.#", Inv);
+
+    private static bool Days(int minutes) => minutes >= 2880 && minutes % 1440 == 0;
 
     private static string Trim(string text, int length) => text.Length <= length ? text : text[..length];
 

@@ -138,4 +138,16 @@ public sealed class JobTests
         Assert.Equal("Print job", PrinterText.DocumentName("secret.pdf", hide: true));
         Assert.Equal("secret.pdf", PrinterText.DocumentName("secret.pdf", hide: false));
     }
+
+    [Theory]
+    [InlineData(PrinterAction.NozzleCheck, 30, "Nozzle check · 0:30")]
+    [InlineData(PrinterAction.HeadClean, 161, "Head clean · 2:41")]
+    [InlineData(PrinterAction.PowerClean, 480, "Power clean · 8:00")]
+    [InlineData(PrinterAction.HeadClean, 0, "Head clean · 0:00")]
+    [InlineData(PrinterAction.HeadClean, -1, "Head clean · 0:00")]
+    public void MaintenancePillText(PrinterAction action, int seconds, string expected) =>
+        Assert.Equal(expected, PrinterText.Pill(action, TimeSpan.FromSeconds(seconds)));
+
+    [Fact]
+    public void PadResetDisplayName() => Assert.Equal("Reset", PrinterText.ActionName(PrinterAction.ResetPad));
 }

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lintel.Core\Lintel.Core.csproj" />
+    <InternalsVisibleTo Include="Lintel.Agents.Tests" />
   </ItemGroup>
 
 </Project>

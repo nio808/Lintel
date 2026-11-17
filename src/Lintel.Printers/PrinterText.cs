@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 using System.Globalization;
+using Lintel.Core.Text;
 
 namespace Lintel.Printers;
 
@@ -9,6 +10,13 @@ public static class PrinterText
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public const string NoPageCounts = "Page counts not reported by this driver";
+
+    public static string ActionName(PrinterAction action) => action switch
+    {
+        PrinterAction.NozzleCheck => "Nozzle check", PrinterAction.HeadClean => "Head clean", PrinterAction.PowerClean => "Power clean", _ => "Reset",
+    };
+
+    public static string Pill(PrinterAction action, TimeSpan remaining) => $"{ActionName(action)} · {Format.Clock(remaining)}";
 
     /// <summary>"under 1 min", "2 min", "1 h 5 min".</summary>
     public static string Eta(TimeSpan t)

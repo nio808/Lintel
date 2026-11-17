@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lintel.Core\Lintel.Core.csproj" />
     <ProjectReference Include="..\..\src\Lintel.Agents\Lintel.Agents.csproj" />
+    <ProjectReference Include="..\..\src\Lintel.Agents.UI\Lintel.Agents.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

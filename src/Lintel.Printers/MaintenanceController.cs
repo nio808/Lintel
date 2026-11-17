@@ -50,6 +50,23 @@ public sealed class MaintenanceController(TimeProvider time, IPrinterMaintenance
         return null;
     }
 
+    public (string Printer, PrinterAction Action, TimeSpan Remaining)? Running()
+    {
+        foreach (var printer in locks.Keys)
+            if (Running(printer) is { Action: not PrinterAction.ResetPad } r)
+                return (printer, r.Action, r.Remaining);
+        return null;
+    }
+
+    public IReadOnlyList<(string Printer, PrinterAction Action)> TakeFinished()
+    {
+        var now = time.GetUtcNow();
+        var finished = locks.Where(l => l.Value.Until <= now).Select(l => (Printer: l.Key, l.Value.Action)).ToList();
+        foreach (var end in finished)
+            locks.Remove(end.Printer);
+        return finished;
+    }
+
     public bool IsArmed(string printer, PrinterAction action) =>
         armed is { } a && a.Printer == printer && a.Action == action && a.Until > time.GetUtcNow();
 
@@ -64,7 +81,7 @@ public sealed class MaintenanceController(TimeProvider time, IPrinterMaintenance
         if (action == PrinterAction.ResetPad && !device.CanResetPad(printer.Driver))
             return new(false, false, "Resetting the counter is not available for this model");
         if (Running(printer.Name) is { } r)
-            return new(false, false, $"Busy: {r.Action} running");
+            return new(false, false, $"Busy: {PrinterText.ActionName(r.Action)} running");
         if (jobActive)
             return new(false, false, "Disabled while a job is printing");
         if (!printer.IsOnline)

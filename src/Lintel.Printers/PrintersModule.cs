@@ -169,6 +169,7 @@ public sealed class PrintersModule : INotchModule
 
     private async Task<ClickResult> RunClick(PrinterAction action, PrinterInfo p)
     {
+        Recompute(notify: false);
         var result = await Controller.ClickAsync(action, p, Jobs.Any(j => j.Printer == p.Name)).ConfigureAwait(true);
         Updated?.Invoke();
         return result;
@@ -211,14 +212,23 @@ public sealed class PrintersModule : INotchModule
         var now = context!.Time.GetUtcNow();
         foreach (var end in tracker.Update(snapshot, now))
             OnJobEnded(end, now);
-        var busy = tracker.Active.Count > 0;
+        foreach (var end in Controller.TakeFinished())
+            if (end.Action != PrinterAction.ResetPad)
+                context.Notch.ShowNotice(new NotchNotice
+                {
+                    Id = "printers.maintenance", Title = $"{PrinterText.ActionName(end.Action)} finished",
+                    Message = end.Action == PrinterAction.NozzleCheck ? null : "Print a nozzle check to see the result.",
+                    Glyph = Glyphs.Printer, Tone = NoticeTone.Success, TargetSectionId = Id,
+                });
+        var maintenance = Controller.Running();
+        var busy = tracker.Active.Count > 0 || maintenance is not null;
         if (ticker is not null && ticker.IsEnabled != busy)
         {
             if (busy) ticker.Start();
             else ticker.Stop();
         }
         UpdateActivityMode();
-        activity?.Update(tracker.Active.FirstOrDefault(), HideNames);
+        activity?.Update(tracker.Active.FirstOrDefault(), maintenance);
         if (notify)
             Updated?.Invoke();
     }
@@ -280,7 +290,7 @@ public sealed class PrintersModule : INotchModule
             Updated?.Invoke();
         };
         timer.Start();
-        Updated?.Invoke();
+        Recompute(notify: true);
     }
 
     /// <summary>Pad counter: only when the printer can be asked, no job is printing, and the cache is stale (10 min) or marked dirty.</summary>
@@ -344,17 +354,18 @@ internal sealed class PrintActivity : CompactActivity
         return label;
     }
 
-    public void Update(JobProgress? job, bool hideNames)
+    public void Update(JobProgress? job, (string Printer, PrinterAction Action, TimeSpan Remaining)? maintenance)
     {
-        IsActive = job is not null;
-        if (job is null)
+        IsActive = job is not null || maintenance is not null;
+        if (!IsActive)
             return;
         if (ring is not null)
         {
-            ring.Value = (job.Fraction ?? 0.15) * 100;
-            ring.SetResourceReference(RingGauge.StrokeProperty, job.Phase == JobPhase.NeedsAttention ? "Tone.Warning" : "Notch.Accent");
+            ring.Value = job is not null ? (job.Fraction ?? 0.15) * 100
+                : Math.Clamp(1 - maintenance!.Value.Remaining / MaintenanceController.Lockout(maintenance.Value.Action), 0, 1) * 100;
+            ring.SetResourceReference(RingGauge.StrokeProperty, job?.Phase == JobPhase.NeedsAttention ? "Tone.Warning" : "Notch.Accent");
         }
         if (label is not null)
-            label.Text = PrinterText.Pill(job);
+            label.Text = job is not null ? PrinterText.Pill(job) : PrinterText.Pill(maintenance!.Value.Action, maintenance.Value.Remaining);
     }
 }
