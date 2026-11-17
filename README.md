@@ -56,6 +56,7 @@ Every feature is a module you switch on in Settings > Features. Each one asks on
 - **Now Playing** and **Volume Mixer**: whatever Windows reports as playing, with controls; per-app volume.
 - **Timer** and **Keep Awake**: countdown, stopwatch, Pomodoro; keep the PC or display awake for a while.
 - **System** and **Quick Toggles**: CPU, memory, network, battery; dark mode, mic mute, lock and more.
+- **Printers**: detects your printers, shows live print progress with pages and an estimate, counts pages, and advises when to clean; for Epson inkjets it reads the ink pad counter and offers nozzle check, head clean and power clean.
 - **Clipboard**, **Shelf**, **Scratchpad**, **Downloads**: encrypted clipboard history, a place to park files, quick notes, downloads in progress.
 - Global shortcuts, keyboard mode, hides over fullscreen apps, follows the main display or the pointer.
 

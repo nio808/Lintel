@@ -170,6 +170,9 @@ public static class Program
 #if PREVIEW_STASH
         foreach (var d in Lintel.Stash.StashCatalog.Modules) yield return d;
 #endif
+#if PREVIEW_PRINTERS
+        foreach (var d in Lintel.Printers.PrintersCatalog.Modules) yield return d;
+#endif
         yield break;
     }
 

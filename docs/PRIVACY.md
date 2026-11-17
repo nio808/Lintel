@@ -23,13 +23,15 @@ The installer script `install.ps1` contacts `github.com` (and `objects.githubuse
 | Path | Content |
 |---|---|
 | `%LOCALAPPDATA%\Lintel\settings.json` | Your settings (schema + key/value pairs) |
-| `%LOCALAPPDATA%\Lintel\data\<module>\...` | Module data: AI usage cache and price list (`agents`), clipboard history (encrypted, `clipboard`), shelf item paths (`shelf`), scratchpad `.txt` notes (`scratchpad`), timer state (`timer`) |
+| `%LOCALAPPDATA%\Lintel\data\<module>\...` | Module data: AI usage cache and price list (`agents`), clipboard history (encrypted, `clipboard`), shelf item paths (`shelf`), scratchpad `.txt` notes (`scratchpad`), timer state (`timer`), per-printer page counts and cleaning history (`printers.stats` in `settings.json`; erase it with Settings > Printers > Reset statistics) |
 | `%LOCALAPPDATA%\Lintel\logs\app.log`, `app.1.log` | Diagnostics, 1 MB each. No clipboard contents, tokens, log lines or e-mail addresses |
 | `%LOCALAPPDATA%\Programs\Lintel\` | The installed app and `uninstall.ps1` (installer only) |
 | Start menu `Lintel` shortcut | Installer |
 | `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Lintel` | Uninstall entry (Settings > Apps) |
 | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Lintel` | Only if you enable "Start with Windows" (in the app, or `-Startup` when installing) |
 | `%TEMP%\Lintel-<id>\`, `%TEMP%\Lintel-update\` | Downloaded zip / `install.ps1` during install or update; removed afterwards (the update folder on the next update) |
+
+Printers: the spooler is only read (printer list, job names and page counts; never the owner or the contents of a document). Document names are shown in the notch and in the "Printed" notice unless you hide them; they are not stored or logged. Maintenance commands and the ink pad counter go to the printer over USB, nothing leaves the PC.
 
 Files of other programs (Claude, Codex, Copilot, OpenCode logs and credentials) are only read, and only after you grant the matching permission. They are never modified.
 

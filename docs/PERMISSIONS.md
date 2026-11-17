@@ -18,6 +18,9 @@ Windows does not sandbox desktop apps, so these are promises the app enforces on
 | `power.keep-awake` | Stop the PC or display from sleeping while on | Power request to Windows | No | Keep Awake |
 | `system.stats` | Read CPU, memory, network, disk and battery numbers | Windows performance counters | No | System |
 | `system.toggles` | Change the Windows settings you click | Theme registry values, desktop-icon visibility, microphone mute, lock, Recycle Bin | No | Quick Toggles |
+| `printers.queue` | See your printers and what they are printing | Printer names, drivers, ports and status; print jobs in the queue: document name (can be hidden in Settings), page counts, state. Never the contents of a document, never the owner. | No | Printers |
+| `printers.maintenance` | Send nozzle check, head clean and power clean to your Epson printer, and read its ink pad counter | Maintenance commands over the printer's USB connection, only when you press a button, and reads of the waste ink pad counter (when the section opens, at most every 10 minutes, never while printing). Head and power cleans use ink; power clean uses a lot and fills the waste ink pad. | No | Printers (optional) |
+| `printers.padreset` | Reset the printer's waste ink pad counter | Writes the counter back to zero inside the printer. Only for use after the ink pads were replaced or cleaned; resetting without that can let waste ink overflow. Kept separate from `printers.maintenance` on purpose. | No | Printers (optional) |
 | `app.startup` | Start with Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value `Lintel` | No | App |
 | `network.updates` | Check GitHub for a new version once a day | Nothing of yours is sent | Yes: `api.github.com`, `github.com`, and `objects.githubusercontent.com` (GitHub's release-download redirect), GET only | App |
 
@@ -35,6 +38,7 @@ Windows does not sandbox desktop apps, so these are promises the app enforces on
 | Downloads | `files.downloads` | |
 | Keep Awake | `power.keep-awake` | |
 | Quick Toggles | `system.toggles` | |
+| Printers | `printers.queue` | `printers.maintenance`, `printers.padreset` |
 
 ## Installer permissions
 

@@ -90,12 +90,13 @@ Check 'dryrun left registry and temp untouched' {
 # --- release path with mocked network: checksum verification happens before anything is installed
 function Invoke-MockedInstall([string]$SumsHash, [string]$Dir) {
     $global:MockHash = $SumsHash
-    function global:Invoke-WebRequest { param($Uri, $OutFile, $Headers, [switch]$UseBasicParsing)
-        if ($Uri -like '*SHA256SUMS.txt') { [IO.File]::WriteAllText($OutFile, $(if ($global:MockHash) { "$($global:MockHash)  Lintel-win-x64.zip`n" } else { "" })) }
-        else { [IO.File]::WriteAllBytes($OutFile, [byte[]](7, 7, 7)) } }
+    $real = (Get-Item function:Save-Url).ScriptBlock
+    function script:Save-Url { param($Url, $Path, $Label)
+        if ($Url -like '*SHA256SUMS.txt') { [IO.File]::WriteAllText($Path, $(if ($global:MockHash) { "$($global:MockHash)  Lintel-win-x64.zip`n" } else { "" })) }
+        else { [IO.File]::WriteAllBytes($Path, [byte[]](7, 7, 7)) } }
     $err = $null
     try { Invoke-LintelInstall -InstallDir $Dir -NoLaunch *>$null } catch { $err = $_.Exception.Message }
-    Remove-Item function:global:Invoke-WebRequest -ErrorAction SilentlyContinue
+    Set-Item -Path function:script:Save-Url -Value $real
     return $err
 }
 $mdir = Join-Path ([IO.Path]::GetTempPath()) ("un-mock-" + [guid]::NewGuid().ToString('N'))

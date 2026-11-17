@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Hardware probe for the Epson reader. Read-only by design: it never calls the maintenance or reset paths.
+       Lintel.PrinterProbe.exe ids | status | counters [printer name] -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWPF>false</UseWPF>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Lintel.Printers\Epson\*.cs" Link="Epson\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

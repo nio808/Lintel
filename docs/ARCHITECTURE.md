@@ -13,6 +13,7 @@ Lintel is a single self-contained WPF exe (.NET 10, x64) that lives in the notif
 | `src/Lintel.Media` | Now Playing (Windows media session) and Volume Mixer (WASAPI sessions via NAudio). |
 | `src/Lintel.Tools` | Timer, Keep Awake, System stats, Quick Toggles. |
 | `src/Lintel.Stash` | Clipboard history, Shelf, Scratchpad, Downloads. |
+| `src/Lintel.Printers` | Printers: spooler watcher (`EnumPrinters`/`EnumJobs` driven by `FindFirstPrinterChangeNotification`), job tracker and ETA, page statistics, recommendation engine, maintenance controller (two-step confirms, lockout), section, settings. `Epson\` talks to Epson inkjets (ink pad counters, maintenance commands). |
 | `src/Lintel.App` | The exe: composition root, tray icon, Settings window (WPF-UI), CLI switches, update installer. |
 | `tools/Lintel.Preview` | Dev harness that renders modules outside the notch. |
 | `tests/*` | xUnit tests per project; `tests/installer` checks `install.ps1` and `build.ps1`. |
@@ -25,7 +26,7 @@ Feature projects depend only on `Lintel.Core`. `Lintel.App` references everythin
 
 ## Modules, Features hub and consents
 
-Each feature is an `INotchModule` described by a `ModuleManifest` (id, name, glyph, category, required and optional permission ids, order). Project catalogs (`AgentsUiCatalog`, `MediaCatalog`, `ToolsCatalog`, `StashCatalog`) export `ModuleDescriptor`s; a module object is constructed only when it starts.
+Each feature is an `INotchModule` described by a `ModuleManifest` (id, name, glyph, category, required and optional permission ids, order). Project catalogs (`AgentsUiCatalog`, `MediaCatalog`, `ToolsCatalog`, `StashCatalog`, `PrintersCatalog`) export `ModuleDescriptor`s; a module object is constructed only when it starts.
 
 - **Install state** is the setting `modules.<id>.installed`. The Features page toggles it through `ModuleManager.Install/Uninstall`; uninstall can also delete the module's data folder and setting keys.
 - **Consents** are settings `consent.<permissionId>`. `PermissionCatalog` holds the plain-words text shown in onboarding, the install dialog and the Permissions page. A module starts only when all its required permissions are granted (otherwise its status is `NeedsPermission`); optional permissions gate individual data sources inside the module. Revoking a permission stops the feature immediately.

@@ -20,6 +20,7 @@ using Lintel.Core.Settings;
 using Lintel.Media;
 using Lintel.Notch;
 using Lintel.Stash;
+using Lintel.Printers;
 using Lintel.Tools;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
@@ -142,6 +143,7 @@ internal sealed class Composition(Application app) : IDisposable
             .. MediaCatalog.Modules,
             .. ToolsCatalog.Modules,
             .. StashCatalog.Modules,
+            .. PrintersCatalog.Modules,
         ];
         modules = new ModuleManager(catalog.OrderBy(d => d.Manifest.Order).ToList(), context);
         updates = new UpdateInstaller(new UpdateChecker(http, appInfo, settings!, consent, TimeProvider.System), appInfo, settings!, consent, log, Quit);

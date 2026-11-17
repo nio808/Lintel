@@ -7,6 +7,7 @@
     <Project Path="src/Lintel.Media/Lintel.Media.csproj" />
     <Project Path="src/Lintel.Tools/Lintel.Tools.csproj" />
     <Project Path="src/Lintel.Stash/Lintel.Stash.csproj" />
+    <Project Path="src/Lintel.Printers/Lintel.Printers.csproj" />
     <Project Path="src/Lintel.App/Lintel.App.csproj" />
   </Folder>
   <Folder Name="/tools/">
@@ -20,6 +21,7 @@
     <Project Path="tests/Lintel.Media.Tests/Lintel.Media.Tests.csproj" />
     <Project Path="tests/Lintel.Tools.Tests/Lintel.Tools.Tests.csproj" />
     <Project Path="tests/Lintel.Stash.Tests/Lintel.Stash.Tests.csproj" />
+    <Project Path="tests/Lintel.Printers.Tests/Lintel.Printers.Tests.csproj" />
   </Folder>
   <Folder Name="/solution/">
     <File Path="Directory.Build.props" />

@@ -16,6 +16,7 @@ public static class PermissionIds
         ClipboardRead = "clipboard.read", InputPaste = "input.paste",
         ShelfFiles = "files.shelf", DownloadsFolder = "files.downloads",
         KeepAwake = "power.keep-awake", SystemStats = "system.stats", SystemToggles = "system.toggles",
+        PrinterQueue = "printers.queue", PrinterMaintenance = "printers.maintenance", PrinterPadReset = "printers.padreset",
         Startup = "app.startup", NetworkUpdates = "network.updates";
 }
 
@@ -80,6 +81,18 @@ public static class PermissionCatalog
             "Change the Windows settings you click",
             "Theme registry values, desktop-icon visibility, microphone mute, lock, Recycle Bin",
             null, "ms-settings:privacy-microphone"),
+        new(PermissionIds.PrinterQueue, "Printer queue",
+            "See your printers and what they are printing",
+            "Printer names, drivers, ports and status; print jobs in the queue: document name (can be hidden), page counts, state. Never the contents, never the owner.",
+            null, null),
+        new(PermissionIds.PrinterMaintenance, "Printer maintenance",
+            "Send nozzle check, head clean and power clean to your Epson printer, and read its ink pad counter",
+            "Maintenance commands to the printer over its USB connection, only when you press a button (the ink pad counter is read when the section opens, at most every 10 minutes, never while printing). Head and power cleans use ink; power clean uses a lot and fills the waste ink pad.",
+            null, null),
+        new(PermissionIds.PrinterPadReset, "Printer pad counter reset",
+            "Reset the printer's waste ink pad counter",
+            "Writes the counter back to zero inside the printer. Only for use after the ink pads were replaced or cleaned.",
+            null, null),
         new(PermissionIds.Startup, "Start with Windows",
             "Start with Windows",
             @"HKCU\Software\Microsoft\Windows\CurrentVersion\Run value Lintel",

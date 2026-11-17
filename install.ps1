@@ -28,8 +28,122 @@ $UninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Linte
 $RunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $RunValue = 'Lintel'   # same value name as StartupRegistration in the app
 
-function Say([string]$Text) { Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline; Write-Host $Text }
+# ---- terminal UI. $script:LtFancy = interactive console: one-line redraws with `r, no ANSI. Otherwise plain lines.
+# The file stays pure ASCII (box and bar glyphs come from [char] codes).
+function Test-Fancy {
+    try { return (-not [Console]::IsOutputRedirected) -and (-not $env:CI) -and $Host.Name -eq 'ConsoleHost' -and $Host.UI.RawUI.WindowSize.Width -gt 0 } catch { return $false }
+}
+function Get-ConsoleWidth { try { return [Math]::Max(40, $Host.UI.RawUI.WindowSize.Width) } catch { return 80 } }
+function Clear-Line { if ($script:LtFancy) { [Console]::Write("`r" + (' ' * ((Get-ConsoleWidth) - 1)) + "`r") } }
+function Say([string]$Text) {
+    if ($script:LtFancy) { Write-Host "  $([char]0x2713) " -ForegroundColor Green -NoNewline } else { Write-Host '  [ok] ' -NoNewline }
+    Write-Host $Text
+}
 function Plan([string]$Text) { Write-Host "  WOULD: $Text" -ForegroundColor Yellow }
+function Format-MB([double]$Bytes) { return ($Bytes / 1MB).ToString('0.0', [Globalization.CultureInfo]::InvariantCulture) }
+
+function Write-Banner([string]$Tag, [string]$Sub) {
+    if (-not $script:LtFancy) { Write-Host "Lintel installer ($Tag)"; return }
+    Write-Host ''
+    Write-Host '  L I N T E L' -ForegroundColor Cyan -NoNewline
+    Write-Host "   $Tag" -ForegroundColor DarkGray
+    Write-Host ('  ' + ([string][char]0x2500 * 40)) -ForegroundColor DarkGray
+    Write-Host "  $Sub" -ForegroundColor Gray
+    Write-Host ''
+}
+
+# Runs $Work with a spinner on one line (fancy) or just runs it (plain). The spinner lives in its own runspace and only
+# writes through [Console]; $Work stays on the calling thread, so it keeps this scope's variables and error behaviour.
+function Invoke-Step([string]$Text, [scriptblock]$Work) {
+    if (-not $script:LtFancy) { return (& $Work) }
+    $frames = if ($env:WT_SESSION) { [char[]](0x280B, 0x2819, 0x2839, 0x2838, 0x283C, 0x2834, 0x2826, 0x2827, 0x2807, 0x280F) } else { [char[]]'|/-\' }
+    $st = [hashtable]::Synchronized(@{ Stop = $false })
+    $rs = [runspacefactory]::CreateRunspace(); $rs.Open()
+    $ps = [powershell]::Create(); $ps.Runspace = $rs
+    [void]$ps.AddScript({
+        param($st, $text, $frames, $fg)
+        for ($i = 0; -not $st.Stop; $i++) {
+            [Console]::ForegroundColor = 'Cyan'; [Console]::Write("`r  $($frames[$i % $frames.Count]) ")
+            [Console]::ForegroundColor = $fg; [Console]::Write("$text ...")
+            Start-Sleep -Milliseconds 80
+        }
+    }).AddArgument($st).AddArgument($Text).AddArgument($frames).AddArgument([Console]::ForegroundColor)
+    $h = $ps.BeginInvoke()
+    try { return (& $Work) }
+    finally {
+        $st.Stop = $true
+        try { $ps.EndInvoke($h) } catch { }
+        $ps.Dispose(); $rs.Dispose()
+        Clear-Line
+    }
+}
+
+function Show-Download([string]$Label, [long]$Done, [long]$Total, [double]$Speed) {
+    $w = (Get-ConsoleWidth) - 1
+    $pct = if ($Total -gt 0) { [int](100 * $Done / $Total) } else { -1 }
+    $size = if ($Total -gt 0) { "$(Format-MB $Done) / $(Format-MB $Total) MB" } else { "$(Format-MB $Done) MB" }
+    $tail = "  $(if ($pct -ge 0) { "$pct%".PadLeft(4) + '  ' })$size  $(Format-MB $Speed) MB/s"
+    $prefix = "  $Label "
+    $barW = if ($pct -ge 0) { [Math]::Min(28, $w - $prefix.Length - $tail.Length - 1) } else { 0 }
+    Write-Host "`r$prefix" -NoNewline
+    if ($barW -ge 8) {
+        $fill = [int]($barW * $pct / 100)
+        Write-Host ([string][char]0x2588 * $fill) -ForegroundColor Cyan -NoNewline
+        Write-Host ([string][char]0x2591 * ($barW - $fill)) -ForegroundColor DarkGray -NoNewline
+    } else { $barW = 0 }
+    $len = $prefix.Length + $barW + $tail.Length
+    Write-Host ($tail + (' ' * [Math]::Max(0, $w - $len))) -ForegroundColor Gray -NoNewline
+}
+
+# Streams $Url to $Path (TLS 1.2 is enabled by the caller). With a $Label: a redrawing progress bar, or one start/end line in plain mode.
+function Save-Url([string]$Url, [string]$Path, [string]$Label) {
+    $req = [Net.HttpWebRequest]::Create($Url)
+    $req.UserAgent = 'Lintel-Installer'; $req.Timeout = 30000; $req.ReadWriteTimeout = 30000
+    $res = $req.GetResponse()
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    $done = [long]0
+    try {
+        $total = $res.ContentLength
+        if ($Label -and -not $script:LtFancy) { Write-Host "  Downloading $Label$(if ($total -gt 0) { " ($(Format-MB $total) MB)" }) ..." }
+        $in = $res.GetResponseStream(); $out = [IO.File]::Create($Path)
+        try {
+            $buf = New-Object byte[] 262144
+            $last = -1000
+            while (($n = $in.Read($buf, 0, $buf.Length)) -gt 0) {
+                $out.Write($buf, 0, $n); $done += $n
+                if ($Label -and $script:LtFancy -and $sw.ElapsedMilliseconds - $last -ge 100) {
+                    $last = $sw.ElapsedMilliseconds
+                    Show-Download $Label $done $total ($done / [Math]::Max(0.001, $sw.Elapsed.TotalSeconds))
+                }
+            }
+        } finally { $out.Dispose(); $in.Dispose() }
+    } finally { $res.Dispose(); Clear-Line }
+    if ($Label) { Say "Downloaded $Label  $(Format-MB $done) MB in $($sw.Elapsed.TotalSeconds.ToString('0.0', [Globalization.CultureInfo]::InvariantCulture)) s" }
+}
+
+# $Rows = @(,@('Label','value'), ...). Boxed when it fits the console, a plain list otherwise.
+function Show-Summary([string]$Title, [object[]]$Rows) {
+    $pad = ($Rows | ForEach-Object { $_[0].Length } | Measure-Object -Maximum).Maximum + 2
+    $lines = @($Rows | ForEach-Object { , @($_[0].PadRight($pad), $_[1]) })
+    $inner = [Math]::Max($Title.Length, ($lines | ForEach-Object { $_[0].Length + $_[1].Length } | Measure-Object -Maximum).Maximum) + 4
+    Write-Host ''
+    if (-not $script:LtFancy -or ($inner + 6) -gt (Get-ConsoleWidth)) {
+        Write-Host "  $Title" -ForegroundColor Green
+        foreach ($l in $lines) { Write-Host "    $($l[0])$($l[1])" }
+        return
+    }
+    $H = [string][char]0x2500; $V = [string][char]0x2502
+    Write-Host ("  $([char]0x250C)" + ($H * $inner) + "$([char]0x2510)") -ForegroundColor DarkGray
+    Write-Host "  $V" -ForegroundColor DarkGray -NoNewline; Write-Host ("  $Title".PadRight($inner)) -ForegroundColor Green -NoNewline; Write-Host $V -ForegroundColor DarkGray
+    Write-Host ("  $V" + (' ' * $inner) + $V) -ForegroundColor DarkGray
+    foreach ($l in $lines) {
+        Write-Host "  $V  " -ForegroundColor DarkGray -NoNewline
+        Write-Host $l[0] -ForegroundColor Gray -NoNewline
+        Write-Host $l[1].PadRight($inner - 2 - $l[0].Length) -NoNewline
+        Write-Host $V -ForegroundColor DarkGray
+    }
+    Write-Host ("  $([char]0x2514)" + ($H * $inner) + "$([char]0x2518)") -ForegroundColor DarkGray
+}
 
 # Create a registry key and any missing parents. Never New-Item -Force: on an existing key it
 # recreates it and wipes every value (e.g. other apps' startup entries under Run).
@@ -121,6 +235,11 @@ function Invoke-LintelInstall {
     if ($Version -and $Version -notmatch '^v?\d+\.\d+\.\d+([-+][0-9A-Za-z.\-+]+)?$') { throw "'$Version' is not a version like 1.2.3." }
     if (-not $InstallDir) { $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Lintel' }
     $exe = Join-Path $InstallDir 'Lintel.exe'
+    $script:LtFancy = (-not $DryRun) -and (Test-Fancy)
+    $cursor = $true
+    if ($script:LtFancy) { try { $cursor = [Console]::CursorVisible; [Console]::CursorVisible = $false } catch { } }
+    try {
+    Write-Banner $(if ($Uninstall) { 'uninstall' } elseif ($Version) { "v$($Version.TrimStart('v'))" } else { 'latest' }) $(if ($Uninstall) { 'Removing Lintel from this PC' } else { 'Per-user install, no admin needed' })
 
     # ---- uninstall
     if ($Uninstall) {
@@ -154,16 +273,21 @@ function Invoke-LintelInstall {
             if ($DryRun) { Plan "download $zipUrl and $sumsUrl"; Plan 'verify SHA-256; abort if it does not match' }
             else {
                 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-                Write-Host "  Downloading Lintel$(if ($Version) { " $($Version.TrimStart('v'))" }) ..."
+                Save-Url $zipUrl $zip $ZipName
                 $sumsFile = Join-Path $tmp $SumsName
-                Invoke-WebRequest -UseBasicParsing -Uri $zipUrl -OutFile $zip -Headers @{ 'User-Agent' = 'Lintel-Installer' }
-                Invoke-WebRequest -UseBasicParsing -Uri $sumsUrl -OutFile $sumsFile -Headers @{ 'User-Agent' = 'Lintel-Installer' }
-                $expected = Get-ChecksumFromText (Get-Content -Raw -LiteralPath $sumsFile) $ZipName
-                if (-not $expected) { throw "$SumsName does not list $ZipName. Nothing was installed." }
+                $expected = Invoke-Step 'Verifying SHA-256' {
+                    Save-Url $sumsUrl $sumsFile ''
+                    $e = Get-ChecksumFromText (Get-Content -Raw -LiteralPath $sumsFile) $ZipName
+                    if (-not $e) { throw "$SumsName does not list $ZipName. Nothing was installed." }
+                    if (-not (Test-FileHash $zip $e)) { throw 'SHA-256 mismatch: the download is not what the release published. Nothing was installed.' }
+                    $e
+                }
+                Say 'SHA-256 verified'
             }
         }
-        if (-not $DryRun -and $expected) {
-            if (-not (Test-FileHash $zip $expected)) { throw 'SHA-256 mismatch: the download is not what the release published. Nothing was installed.' }
+        if (-not $DryRun -and $expected -and $Source) {
+            $ok = Invoke-Step 'Verifying SHA-256' { Test-FileHash $zip $expected }
+            if (-not $ok) { throw 'SHA-256 mismatch: the download is not what the release published. Nothing was installed.' }
             Say 'SHA-256 verified'
         }
 
@@ -177,19 +301,25 @@ function Invoke-LintelInstall {
         # ---- stage, stop, copy (in-place upgrade)
         $stage = Join-Path $tmp 'stage'
         New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-        Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
-        if (-not (Test-Path -LiteralPath (Join-Path $stage 'Lintel.exe'))) { throw "$ZipName does not contain Lintel.exe." }
+        Invoke-Step 'Extracting' {
+            Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
+            if (-not (Test-Path -LiteralPath (Join-Path $stage 'Lintel.exe'))) { throw "$ZipName does not contain Lintel.exe." }
+        }
+        Say 'Extracted'
         $upgrade = Test-Path -LiteralPath $exe
-        Stop-Lintel $InstallDir
-        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-        Copy-Item -Path (Join-Path $stage '*') -Destination $InstallDir -Recurse -Force
-        [IO.File]::WriteAllText((Join-Path $InstallDir 'uninstall.ps1'), (Get-UninstallScript), (New-Object Text.UTF8Encoding($true)))
+        Invoke-Step 'Installing files' {
+            Stop-Lintel $InstallDir
+            New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+            Copy-Item -Path (Join-Path $stage '*') -Destination $InstallDir -Recurse -Force
+            [IO.File]::WriteAllText((Join-Path $InstallDir 'uninstall.ps1'), (Get-UninstallScript), (New-Object Text.UTF8Encoding($true)))
+        }
         $ver = ("$(try { (Get-Item -LiteralPath $exe).VersionInfo.ProductVersion } catch { '' })" -split '\+')[0]
         if (-not $ver) { $ver = "$Version".TrimStart('v') }
         if (-not $ver) { $ver = 'unknown' }
         Say "$(if ($upgrade) { 'Upgraded' } else { 'Installed' }) Lintel $ver in $InstallDir"
 
         # ---- shortcut, Uninstall entry, optional startup
+        Invoke-Step 'Creating shortcuts' {
         $lnk = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Lintel.lnk'
         $sh = New-Object -ComObject WScript.Shell
         $s = $sh.CreateShortcut($lnk)
@@ -209,6 +339,7 @@ function Invoke-LintelInstall {
         Set-ItemProperty -Path $UninstallKey -Name EstimatedSize -Value $size -Type DWord
         Set-ItemProperty -Path $UninstallKey -Name NoModify -Value 1 -Type DWord
         Set-ItemProperty -Path $UninstallKey -Name NoRepair -Value 1 -Type DWord
+        }
         Say 'Start menu shortcut and Apps entry added'
         if ($Startup) {
             # Never use New-Item -Force here: on an existing key it recreates it and wipes every other app's startup entry.
@@ -218,9 +349,19 @@ function Invoke-LintelInstall {
             Say 'Will start with Windows'
         }
         if (-not $NoLaunch) { Start-Process -FilePath $exe; Say 'Lintel is running (look for the tray icon)' }
-        Write-Host '  Remove it any time: Windows Settings > Apps > Lintel.' -ForegroundColor DarkGray
+        Show-Summary "Lintel $ver is $(if ($upgrade) { 'up to date' } else { 'installed' })" @(
+            @('Installed', $InstallDir),
+            @('Open', 'Start menu > Lintel, or the tray icon'),
+            @('Start-up', $(if ($Startup) { 'On (tray icon > right-click > Start with Windows to change)' } else { 'Tray icon > right-click > Start with Windows' })),
+            @('Update', "irm https://raw.githubusercontent.com/$Repo/main/install.ps1 | iex"),
+            @('Uninstall', 'Windows Settings > Apps > Lintel')
+        )
+        Write-Host ''
     } finally {
         if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+    } finally {
+        if ($script:LtFancy) { try { [Console]::CursorVisible = $cursor } catch { } }
     }
 }
 

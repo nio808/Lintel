@@ -61,5 +61,6 @@ public static class Glyphs
     public const string History = "";
     public const string Wrench = "";
     public const string Bell = "";
+    public const string Printer = "";
     public const string Document = "";
 }

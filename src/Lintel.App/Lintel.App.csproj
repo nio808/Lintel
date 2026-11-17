@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Lintel.Media\Lintel.Media.csproj" />
     <ProjectReference Include="..\Lintel.Tools\Lintel.Tools.csproj" />
     <ProjectReference Include="..\Lintel.Stash\Lintel.Stash.csproj" />
+    <ProjectReference Include="..\Lintel.Printers\Lintel.Printers.csproj" />
   </ItemGroup>
 
   <ItemGroup>

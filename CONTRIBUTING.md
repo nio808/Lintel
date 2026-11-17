@@ -14,7 +14,7 @@ Windows 10/11 x64 only (WPF, .NET 10). Releases: push a `v*` tag; the release wo
 
 ## Layout
 
-`src/Lintel.Core` contracts, settings, permissions, module manager, UI kit · `Notch` the window · `Agents` / `Agents.UI` AI usage data and UI · `Media`, `Tools`, `Stash` feature modules · `App` the exe (composition root, tray, settings) · `tools/Lintel.Preview` dev harness · `tests/*` xUnit · `build.ps1`, `install.ps1`, `.github/` packaging.
+`src/Lintel.Core` contracts, settings, permissions, module manager, UI kit · `Notch` the window · `Agents` / `Agents.UI` AI usage data and UI · `Media`, `Tools`, `Stash`, `Printers` feature modules · `App` the exe (composition root, tray, settings) · `tools/Lintel.Preview` dev harness · `tests/*` xUnit · `build.ps1`, `install.ps1`, `.github/` packaging.
 
 ## Rules
 
